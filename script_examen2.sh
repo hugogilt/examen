@@ -33,10 +33,24 @@ aws ec2 create-tags \
   --tags Key=Name,Value=CRUsystemVPC
 
 # Crear subredes para cada departamento
-declare -A DEPARTAMENTOS=( ["Ingenieria"]="100" ["Desarrollo"]="500" ["Mantenimiento"]="20" ["Soporte"]="250" )
 
-for DEP in "${!DEPARTAMENTOS[@]}"; do
-  SUBNET_CIDR="192.168.1.${RANDOM%255}/28"  # Puedes ajustar el rango de direcciones de subred según sea necesario
+# Nombre de la VPC
+VPC_NAME="VPCExamen"
+
+# Crear VPC
+VPC_ID=$AWS_ID_VPC
+
+# Crear subredes
+declare -A SUBNETS=( ["Desarrollo"]="192.168.0.0/23" ["Soporte"]="192.168.2.0/24" ["Ingenieria"]="192.168.3.0/25" ["Mantenimiento"]="192.168.3.128/27" )
+
+for SUBNET_NAME in "${!SUBNETS[@]}"; do
+    SUBNET_CIDR=${SUBNETS[$SUBNET_NAME]}
+    SUBNET_ID=$(aws ec2 create-subnet --vpc-id $VPC_ID --cidr-block $SUBNET_CIDR --output json | jq -r '.Subnet.SubnetId')
+
+    aws ec2 create-tags --resources $SUBNET_ID --tags Key=Name,Value=$SUBNET_NAME
+
+    echo "Subred $SUBNET_NAME creada con ID: $SUBNET_ID"
+done
 
   # Crear subred en la VPC
   AWS_ID_Subred=$(
